@@ -1,89 +1,198 @@
 # Synapses
 
-A **lightweight** library for **neural networks** that **runs anywhere**!
+# synapses-java
 
-![Network Video](https://github.com/mrdimosthenis/Synapses/blob/master/network-video.gif?raw=true)
+A **neural networks** library for **Elixir**!
 
-## [Getting Started](https://mrdimosthenis.github.io/Synapses)
+```elixir
+# add
+{:synapses, "~> 7.4.1"}
+# to mix.exs
+```
 
-### Why Sypapses?
+## Neural Network
 
-#### It's easy
+### Create a neural network
 
-1. Add **one dependency** to your project.
-2. Write a **single import statement**.
-3. Use **a few pure functions**.
+Import `Synapses`, call `NeuralNetwork.init` and provide the size of each _layer_.
 
-You are all set!
+```elixir
+alias Synapses.{ActivationFunction, NeuralNetwork, DataPreprocessor, Statistics}
+layers = [4, 6, 5, 3]
+neuralNetwork = NeuralNetwork.init(layers)
+```
 
-#### It runs anywhere
+`neuralNetwork` has 4 layers. The first layer has 4 input nodes and the last layer has 3 output nodes.
+There are 2 hidden layers with 6 and 5 neurons respectively.
 
-Supported languages:
+### Get a prediction
 
-* [JavaScript](https://mrdimosthenis.github.io/Synapses/?javascript)
-* [Python](https://mrdimosthenis.github.io/Synapses/?python)
-* [Java](https://mrdimosthenis.github.io/Synapses/?java)
-* [C#](https://mrdimosthenis.github.io/Synapses/?csharp)
-* [Scala](https://mrdimosthenis.github.io/Synapses/?scala)
-* [Elixir](https://mrdimosthenis.github.io/Synapses/?elixir)
-* [F#](https://mrdimosthenis.github.io/Synapses/?fsharp)
+```elixir
+inputValues = [1.0, 0.5625, 0.511111, 0.47619]
+prediction =
+  NeuralNetwork.prediction(neuralNetwork, inputValues)
+```
 
-#### It's compatible across languages
+`prediction` should be something like `[ 0.8296, 0.6996, 0.4541 ]`.
 
-1. The [interface](https://github.com/mrdimosthenis/Synapses/blob/master/interface.md) is **common** across languages.
-2. You can transfer a network from one platform to another via its **json instance**.
-Create a neural network in *Python*, train it in *Java* and get its predictions in *JavaScript*!
+Note that the lengths of inputValues and prediction equal to the sizes of input and output layers respectively.
 
-#### It offers visualizations
+### Fit network
 
-Get an overview of a neural network by taking a brief look at its **svg drawing**.
+```elixir
+learningRate = 0.5
+expectedOutput = [0.0, 1.0, 0.0]
+fitNetwork =
+  NeuralNetwork.fit(
+    neuralNetwork,
+    learningRate,
+    inputValues,
+    expectedOutput
+  )
+```
+
+`fitNetwork` is a new neural network trained with a single observation.
+
+To train a neural network, you should fit with multiple datapoints
+
+### Create a customized neural network
+
+The _activation function_ of the neurons created with `NeuralNetwork.init`, is a sigmoid one.
+If you want to customize the _activation functions_ and the _weight distribution_, call `NeuralNetwork.customizedInit`.
+
+```elixir
+activationF = fn (layerIndex) ->
+  case layerIndex do
+    0 -> ActivationFunction.sigmoid
+    1 -> ActivationFunction.identity
+    2 -> ActivationFunction.leakyReLU
+    _ -> ActivationFunction.tanh
+  end
+end
+
+weightInitF = fn (_layerIndex) ->
+  1.0 - 2.0 * :rand.uniform()
+end
+
+customizedNetwork =
+  NeuralNetwork.customizedInit(
+    layers,
+    activationF,
+    weightInitF
+  )
+```
+
+## Visualization
+
+Call `NeuralNetwork.toSvg` to take a brief look at its _svg drawing_.
 
 ![Network Drawing](https://github.com/mrdimosthenis/Synapses/blob/master/network-drawing.png?raw=true)
 
-#### It's customizable
+The color of each neuron depends on its _activation function_
+while the transparency of the synapses depends on their _weight_.
 
-You can specify the **activation function** and the **weight distribution** for the neurons of each layer.
-If this is not enough, edit the [json instance](https://raw.githubusercontent.com/mrdimosthenis/Synapses/master/network.json) of a network to be exactly what you have in mind.
+```elixir
+svg = NeuralNetwork.toSvg(customizedNetwork)
+```
 
-#### It's efficient
+## Save and load a neural network
 
-The implementation is based on *lazy list*.
-The information flows smoothly.
-Everything is obtained at a single pass.
+JSON instances are **compatible** across platforms!
+We can generate, train and save a neural network in Python
+and then load and make predictions in Javascript!
 
-#### Data preprocessing is simple
+### toJson
 
-By annotating the *discrete* and *continuous attributes*,
-you can create a *preprocessor* that **encodes** and **decodes** the datapoints.
+Call `NeuralNetwork.toJson` on a neural network and get a string representation of it.
+Use it as you like. Save `json` in the file system or insert into a database table.
 
-#### Works for huge datasets
+```elixir
+json = NeuralNetwork.toJson(customizedNetwork)
+```
 
-The functions that process big volumes of data, have an *Iterable/Stream* as argument.
-RAM should not get full!
+### ofJson
 
-#### It's well tested
+```elixir
+loadedNetwork = NeuralNetwork.ofJson(json)
+```
 
-Every function is tested for every language.
-Please take a look at the test projects.
+As the name suggests, `NeuralNetwork.ofJson` turns a json string into a neural network.
 
-* [JavaScript](https://github.com/mrdimosthenis/Synapses/tree/master/test-projects/remote-deps/JavaScriptTest/test)
-* [Python](https://github.com/mrdimosthenis/Synapses/tree/master/test-projects/remote-deps/PythonTest/test)
-* [Java](https://github.com/mrdimosthenis/Synapses/tree/master/test-projects/remote-deps/JavaTest/src/test/java)
-* [C#](https://github.com/mrdimosthenis/Synapses/tree/master/test-projects/remote-deps/CSharpTest)
-* [Scala](https://github.com/mrdimosthenis/Synapses/tree/master/test-projects/remote-deps/ScalaTest/src/test/scala)
-* [Elixir](https://github.com/mrdimosthenis/Synapses/tree/master/test-projects/remote-deps/ElixirTest/test)
-* [F#](https://github.com/mrdimosthenis/Synapses/tree/master/test-projects/remote-deps/FSharpTest)
+## Encoding and decoding
 
-### Dependencies
+_One hot encoding_ is a process that turns discrete attributes into a list of _0.0_ and _1.0_.
+_Minmax normalization_ scales continuous attributes into values between _0.0_ and _1.0_.
+You can use `DataPreprocessor` for datapoint encoding and decoding.
 
-* [circe](https://github.com/circe/circe)
-* [FSharpx.Collections](https://github.com/fsprojects/FSharpx.Collections)
-* [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json)
-* [PyFunctional](https://github.com/EntilZha/PyFunctional)
-* [gleam_synapses](https://github.com/mrdimosthenis/gleam_synapses)
+The first parameter of `DataPreprocessor.init` is a list of tuples _(attributeName, discreteOrNot)_.
 
-### Misc
+```elixir
+setosaDatapoint = %{
+  "petal_length" => "1.5",
+  "petal_width" => "0.1",
+  "sepal_length" => "4.9",
+  "sepal_width" => "3.1",
+  "species" => "setosa"
+}
 
-![JetBrains](https://github.com/mrdimosthenis/Synapses/blob/master/jetbrains.png?raw=true)
+versicolorDatapoint = %{
+  "petal_length" => "3.8",
+  "petal_width" => "1.1",
+  "sepal_length" => "5.5",
+  "sepal_width" => "2.4",
+  "species" => "versicolor"
+}
 
-[JetBrains tools have helped for this project!](https://www.jetbrains.com/?from=Synapses)
+virginicaDatapoint = %{
+  "petal_length" => "6.0",
+  "petal_width" => "2.2",
+  "sepal_length" => "5.0",
+  "sepal_width" => "1.5",
+  "species" => "virginica"
+}
+
+dataset = [setosaDatapoint, versicolorDatapoint, virginicaDatapoint]
+
+dataPreprocessor =
+  DataPreprocessor.init(
+    [
+      {"petal_length", false},
+      {"petal_width", false},
+      {"sepal_length", false},
+      {"sepal_width", false},
+      {"species", true}
+    ],
+    dataset
+  )
+  
+encodedDatapoints = Enum.map(
+  dataset,
+  fn x ->
+    DataPreprocessor.encodedDatapoint(dataPreprocessor, x)
+  end
+)
+```
+
+`encodedDatapoints` equals to:
+
+```json
+[ [ 0.0     , 0.0     , 0.0     , 1.0     , 0.0, 0.0, 1.0 ],
+  [ 0.511111, 0.476190, 1.0     , 0.562500, 0.0, 1.0, 0.0 ],
+  [ 1.0     , 1.0     , 0.166667, 0.0     , 1.0, 0.0, 0.0 ] ]
+```
+
+Save and load the preprocessor by calling `DataPreprocessor.toJson` and `DataPreprocessor.ofJson`.
+
+## Evaluation
+
+To evaluate a neural network, you can call `Statistics.rootMeanSquareError` and provide the expected and predicted values.
+
+```elixir
+expectedWithOutputValues =
+  [
+    {[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]},
+    {[0.0, 0.0, 1.0], [0.0, 1.0, 1.0]}
+  ]
+  
+rmse = Statistics.rootMeanSquareError(expectedWithOutputValues)
+```
