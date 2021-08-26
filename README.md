@@ -1,7 +1,5 @@
 # Synapses
 
-# synapses-java
-
 A **neural networks** library for **Elixir**!
 
 ```elixir
